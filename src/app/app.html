@@ -1,0 +1,90 @@
+<div class="container mt-5">
+  <div class="card mb-4 shadow">
+    <div class="card-header bg-success text-white">
+      <h4 class="mb-0">Registrar Nueva Cancha</h4>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <input type="text" class="form-control" [(ngModel)]="nuevaCancha.nombre" placeholder="Nombre">
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" [(ngModel)]="nuevaCancha.tipo_deporte" placeholder="Tipo de Cancha">
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" [(ngModel)]="nuevaCancha.precio_por_hora" placeholder="Precio">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-success w-100" (click)="guardarCancha()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 shadow border-primary" *ngIf="nuevaReserva.cancha_id !== 0">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Agendar Reserva para Cancha ID: {{nuevaReserva.cancha_id}}</h4>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="guardarReserva()">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Nombre del Cliente</label>
+            <input type="text" class="form-control" [(ngModel)]="nuevaReserva.nombre_cliente" name="cliente" required>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="datetime-local" class="form-control" [(ngModel)]="nuevaReserva.fecha_inicio" (change)="calcularTotal()" name="inicio" required>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="datetime-local" class="form-control" [(ngModel)]="nuevaReserva.fecha_fin" (change)="calcularTotal()" name="fin" required>
+          </div>
+          <div class="col-md-2 mb-3">
+            <label class="form-label">Total Pago</label>
+            <input type="text" class="form-control bg-light" [value]="nuevaReserva.total_pago | currency" readonly>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary flex-grow-1">Confirmar Reserva</button>
+          <button type="button" class="btn btn-secondary" (click)="nuevaReserva.cancha_id = 0">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white text-center">
+      <h2>Lista de Canchas Disponibles</h2>
+    </div>
+    <div class="card-body">
+      <table class="table table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Tipo de Cancha</th>
+            <th>Precio por Hora</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of listaCanchas">
+            <td>{{ c.id }}</td>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.tipo_deporte }}</td>
+            <td>{{ c.precio_por_hora | currency }}</td>
+            <td class="text-center">
+              <button class="btn btn-info btn-sm me-2" (click)="nuevaReserva.cancha_id = c.id!; calcularTotal()">
+                Reservar
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="borrarCancha(c.id)">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
