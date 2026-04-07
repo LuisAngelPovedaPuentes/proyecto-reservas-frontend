@@ -6,11 +6,12 @@ import { CanchaService } from './services/cancha';
 import { Cancha } from './models/cancha';
 import { ReservaService } from './services/reserva';
 import { Reserva } from './models/reserva';
+import { RouterOutlet } from '@angular/router'; // Asegúrate de que esta línea esté aquí
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule],
+  imports: [CommonModule, HttpClientModule, FormsModule, RouterOutlet], // Y que esté incluido en este array
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
@@ -19,6 +20,7 @@ export class AppComponent implements OnInit {
   listaReservas: Reserva[] = []; // <--- 1. Variable para almacenar las reservas de la DB
   filtroNombre: string = '';
   filtroFecha: string = '';
+  title = 'frontend-reservas';
 
   nuevaCancha: Cancha = {
     nombre: '',

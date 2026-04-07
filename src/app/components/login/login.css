@@ -1,0 +1,45 @@
+.login-container {
+    max-width: 400px;
+    margin: 50px auto; /* Centra el cuadro en la pantalla */
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* Bordes redondeados */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra suave */
+    font-family: Arial, sans-serif;
+}
+
+h2 { text-align: center; color: #333; }
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label { display: block; margin-bottom: 5px; font-weight: bold; }
+
+input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box; /* Para que el padding no ensanche el input */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff; /* Azul profesional */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:disabled {
+    background-color: #ccc; /* Gris si el formulario está incompleto */
+}
+
+.error {
+    color: red;
+    font-size: 0.9em;
+    text-align: center;
+}

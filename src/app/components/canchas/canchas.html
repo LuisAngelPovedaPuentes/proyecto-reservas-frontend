@@ -1,0 +1,85 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bienvenido, {{ usuarioLogueado?.name }} ({{ userRole }})</h2>
+    <button class="btn btn-outline-danger" (click)="logout()">Cerrar Sesión</button>
+  </div>
+
+  <div *ngIf="userRole === 'admin'" class="card bg-success text-white mb-4 shadow">
+    <div class="card-header"><h4>Registrar Nueva Cancha</h4></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <input type="text" class="form-control" placeholder="Nombre" [(ngModel)]="nuevaCancha.nombre">
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" placeholder="Tipo (Fútbol, Tenis)" [(ngModel)]="nuevaCancha.tipo_deporte">
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" placeholder="Precio/Hora" [(ngModel)]="nuevaCancha.precio_por_hora">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-dark w-100" (click)="guardarCancha()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white text-center"><h3>Lista de Canchas Disponibles</h3></div>
+    <div class="table-responsive">
+      <table class="table table-hover text-center mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Precio/Hora</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cancha of listaCanchas">
+            <td>{{ cancha.nombre }}</td>
+            <td>{{ cancha.tipo_deporte }}</td>
+            <td>{{ cancha.precio_por_hora | currency }}</td>
+            <td>
+              <button class="btn btn-sm btn-info me-1">Reservar</button>
+              <button *ngIf="userRole === 'admin'" class="btn btn-sm btn-danger">Eliminar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card shadow">
+    <div class="card-header bg-info text-white"><h4>Historial de Reservas</h4></div>
+    <div class="card-body">
+      <div *ngIf="userRole === 'admin'" class="row mb-3">
+        <div class="col-md-6">
+          <input type="text" class="form-control" placeholder="Buscar por cliente..." [(ngModel)]="filtroNombre">
+        </div>
+      </div>
+
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th *ngIf="userRole === 'admin'">Cliente</th>
+            <th>Cancha</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reserva of reservasFiltradas()">
+            <td *ngIf="userRole === 'admin'">{{ reserva.nombre_cliente }}</td>
+            <td>{{ reserva.cancha_id }}</td>
+            <td>{{ reserva.fecha_inicio | date:'short' }}</td>
+            <td>{{ reserva.fecha_fin | date:'short' }}</td>
+            <td>{{ reserva.total_pago | currency }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

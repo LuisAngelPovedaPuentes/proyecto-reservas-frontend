@@ -1,0 +1,27 @@
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.shadow {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.table thead th {
+    border-top: none;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #444;
+}
+
+/* Efecto hover en filas */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
