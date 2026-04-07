@@ -4,46 +4,61 @@
     <button class="btn btn-outline-danger" (click)="logout()">Cerrar Sesión</button>
   </div>
 
-  <div *ngIf="userRole === 'admin'" class="card bg-success text-white mb-4 shadow">
-    <div class="card-header"><h4>Registrar Nueva Cancha</h4></div>
+  <div *ngIf="userRole === 'admin'" class="card mb-4 shadow" [ngClass]="editando ? 'bg-warning text-dark' : 'bg-success text-white'">
+    <div class="card-header">
+      <h4 class="mb-0">{{ editando ? 'Modificar Cancha' : 'Registrar Nueva Cancha' }}</h4>
+    </div>
     <div class="card-body">
       <div class="row g-3">
         <div class="col-md-4">
-          <input type="text" class="form-control" placeholder="Nombre" [(ngModel)]="nuevaCancha.nombre">
+          <label class="form-label">Nombre de la Cancha</label>
+          <input type="text" class="form-control" placeholder="Ej: Cancha Sintética 1" [(ngModel)]="nuevaCancha.nombre">
         </div>
         <div class="col-md-3">
-          <input type="text" class="form-control" placeholder="Tipo (Fútbol, Tenis)" [(ngModel)]="nuevaCancha.tipo_deporte">
+          <label class="form-label">Tipo de Deporte</label>
+          <input type="text" class="form-control" placeholder="Fútbol, Tenis..." [(ngModel)]="nuevaCancha.tipo_deporte">
         </div>
         <div class="col-md-3">
-          <input type="number" class="form-control" placeholder="Precio/Hora" [(ngModel)]="nuevaCancha.precio_por_hora">
+          <label class="form-label">Precio por Hora</label>
+          <input type="number" class="form-control" placeholder="0.00" [(ngModel)]="nuevaCancha.precio_por_hora">
         </div>
-        <div class="col-md-2">
-          <button class="btn btn-dark w-100" (click)="guardarCancha()">Guardar</button>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="w-100">
+            <button class="btn btn-dark w-100" (click)="guardarCancha()">
+              {{ editando ? 'Actualizar' : 'Guardar' }}
+            </button>
+            <button *ngIf="editando" class="btn btn-link text-dark w-100 mt-1" (click)="resetFormulario()">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="card shadow mb-4">
-    <div class="card-header bg-primary text-white text-center"><h3>Lista de Canchas Disponibles</h3></div>
+    <div class="card-header bg-primary text-white text-center">
+      <h3 class="mb-0">Lista de Canchas Disponibles</h3>
+    </div>
     <div class="table-responsive">
       <table class="table table-hover text-center mb-0">
         <thead class="table-dark">
           <tr>
             <th>Nombre</th>
-            <th>Tipo</th>
+            <th>Tipo de Deporte</th>
             <th>Precio/Hora</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let cancha of listaCanchas">
-            <td>{{ cancha.nombre }}</td>
+            <td><strong>{{ cancha.nombre }}</strong></td>
             <td>{{ cancha.tipo_deporte }}</td>
             <td>{{ cancha.precio_por_hora | currency }}</td>
             <td>
-              <button class="btn btn-sm btn-info me-1">Reservar</button>
-              <button *ngIf="userRole === 'admin'" class="btn btn-sm btn-danger">Eliminar</button>
+              <button class="btn btn-sm btn-info me-1 text-white"(click)="abrirModalReserva(cancha)">Reservar</button>
+              <ng-container *ngIf="userRole === 'admin'">
+                <button class="btn btn-sm btn-warning me-1" (click)="editarCancha(cancha)">Editar</button>
+                <button class="btn btn-sm btn-danger" (click)="borrarCancha(cancha.id)">Eliminar</button>
+              </ng-container>
             </td>
           </tr>
         </tbody>
@@ -52,34 +67,48 @@
   </div>
 
   <div class="card shadow">
-    <div class="card-header bg-info text-white"><h4>Historial de Reservas</h4></div>
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">{{ userRole === 'admin' ? 'Control Global de Reservas' : 'Historial de Reservas' }}</h4>
+    </div>
     <div class="card-body">
       <div *ngIf="userRole === 'admin'" class="row mb-3">
         <div class="col-md-6">
-          <input type="text" class="form-control" placeholder="Buscar por cliente..." [(ngModel)]="filtroNombre">
+          <input type="text" class="form-control" placeholder="🔍 Buscar por cliente..." [(ngModel)]="filtroNombre">
         </div>
       </div>
 
-      <table class="table table-bordered">
-        <thead class="table-light">
-          <tr>
-            <th *ngIf="userRole === 'admin'">Cliente</th>
-            <th>Cancha</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let reserva of reservasFiltradas()">
-            <td *ngIf="userRole === 'admin'">{{ reserva.nombre_cliente }}</td>
-            <td>{{ reserva.cancha_id }}</td>
-            <td>{{ reserva.fecha_inicio | date:'short' }}</td>
-            <td>{{ reserva.fecha_fin | date:'short' }}</td>
-            <td>{{ reserva.total_pago | currency }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-light">
+            <tr>
+              <th *ngIf="userRole === 'admin'">Cliente</th>
+              <th>Cancha</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reserva of reservasFiltradas()">
+              <td *ngIf="userRole === 'admin'"><strong>{{ reserva.nombre_cliente }}</strong></td>
+              <td>{{ reserva.cancha?.nombre || 'Cancha #' + reserva.cancha_id }}</td>
+              <td>{{ reserva.fecha_inicio | date:'short' }}</td>
+              <td>{{ reserva.fecha_fin | date:'short' }}</td>
+              <td><span class="text-success fw-bold">{{ reserva.total_pago | currency }}</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1">Modificar</button>
+                <button *ngIf="userRole === 'admin'" class="btn btn-sm btn-outline-danger" (click)="cancelarReserva(reserva.id)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="reservasFiltradas().length === 0" class="text-center py-3">
+        <p class="text-muted">No se encontraron registros de reservas.</p>
+      </div>
     </div>
   </div>
 </div>
