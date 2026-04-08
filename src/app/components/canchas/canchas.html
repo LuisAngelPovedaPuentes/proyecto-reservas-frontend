@@ -54,7 +54,12 @@
             <td>{{ cancha.tipo_deporte }}</td>
             <td>{{ cancha.precio_por_hora | currency }}</td>
             <td>
-              <button class="btn btn-sm btn-info me-1 text-white"(click)="abrirModalReserva(cancha)">Reservar</button>
+              <button class="btn btn-sm btn-info text-white"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalReserva"
+                      (click)="prepararReserva(cancha)">
+                Reservar
+              </button>
               <ng-container *ngIf="userRole === 'admin'">
                 <button class="btn btn-sm btn-warning me-1" (click)="editarCancha(cancha)">Editar</button>
                 <button class="btn btn-sm btn-danger" (click)="borrarCancha(cancha.id)">Eliminar</button>
@@ -106,8 +111,32 @@
           </tbody>
         </table>
       </div>
-      <div *ngIf="reservasFiltradas().length === 0" class="text-center py-3">
-        <p class="text-muted">No se encontraron registros de reservas.</p>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalReserva" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content text-dark">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Nueva Reserva: {{ canchaSeleccionada?.nombre }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Fecha y Hora de Inicio</label>
+            <input type="datetime-local" class="form-control" [(ngModel)]="nuevaReservaForm.fecha_inicio">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Fecha y Hora de Fin</label>
+            <input type="datetime-local" class="form-control" [(ngModel)]="nuevaReservaForm.fecha_fin">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-success" (click)="confirmarReserva()" data-bs-dismiss="modal">
+            Confirmar Reserva
+          </button>
+        </div>
       </div>
     </div>
   </div>
