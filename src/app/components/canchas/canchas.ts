@@ -20,12 +20,20 @@ export class CanchasComponent implements OnInit {
   listaCanchas: any[] = [];
   listaReservas: any[] = [];
 
+  // Para búsqueda de usuarios (Admin)
+  listaUsuarios: any[] = [];
+  usuariosFiltrados: any[] = [];
+  busquedaUsuario: string = '';
+  usuarioSeleccionado: any = null;
+
   nuevaCancha = { id: null, nombre: '', tipo_deporte: '', precio_por_hora: 0 };
   editando: boolean = false;
 
-  // VARIABLES PARA EL MODAL
   canchaSeleccionada: any = null;
   nuevaReservaForm = { fecha_inicio: '', fecha_fin: '' };
+
+  editandoReserva: boolean = false;
+  reservaIdAEditar: number | null = null;
 
   filtroNombre: string = '';
 
@@ -39,6 +47,7 @@ export class CanchasComponent implements OnInit {
       this.nombreUsuario = this.usuarioLogueado.name;
       this.obtenerCanchas();
       this.obtenerReservas();
+      if (this.userRole === 'admin') this.obtenerUsuarios();
     } else {
       this.router.navigate(['/login']);
     }
@@ -49,12 +58,47 @@ export class CanchasComponent implements OnInit {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
+  obtenerUsuarios() {
+    this.http.get<any[]>('http://localhost:8000/api/usuarios-lista', { headers: this.getHeaders() }).subscribe({
+      next: (data) => this.listaUsuarios = data,
+      error: (err) => console.error('Error al cargar usuarios', err)
+    });
+  }
+
+  filtrarUsuarios() {
+    if (this.busquedaUsuario.length > 1) {
+      this.usuariosFiltrados = this.listaUsuarios.filter(u =>
+        u.name.toLowerCase().includes(this.busquedaUsuario.toLowerCase())
+      );
+    } else {
+      this.usuariosFiltrados = [];
+    }
+  }
+
+  seleccionarUsuario(u: any) {
+    this.usuarioSeleccionado = u;
+    this.busquedaUsuario = u.name;
+    this.usuariosFiltrados = [];
+  }
+
   obtenerCanchas() {
     this.http.get<any[]>('http://localhost:8000/api/canchas', { headers: this.getHeaders() }).subscribe({
       next: (data) => this.listaCanchas = data.sort((a, b) => a.precio_por_hora - b.precio_por_hora),
       error: (err) => console.error('Error al cargar canchas', err)
     });
   }
+
+  // Agrega esto dentro de la clase en canchas.ts si falta:
+editarCancha(cancha: any) {
+  console.log('Editando:', cancha);
+  // Tu lógica de edición aquí
+}
+
+eliminarCancha(id: number) {
+  if(confirm('¿Estás seguro de eliminar esta cancha?')) {
+    // Tu lógica de eliminación aquí
+  }
+}
 
   obtenerReservas() {
     this.http.get<any[]>('http://localhost:8000/api/reservas', { headers: this.getHeaders() }).subscribe({
@@ -78,59 +122,84 @@ export class CanchasComponent implements OnInit {
     });
   }
 
-  editarCancha(cancha: any) {
-    this.editando = true;
-    this.nuevaCancha = { ...cancha };
-  }
-
-  borrarCancha(id: number) {
-    if (confirm('¿Eliminar esta cancha?')) {
-      this.http.delete(`http://localhost:8000/api/canchas/${id}`, { headers: this.getHeaders() }).subscribe({
-        next: () => this.obtenerCanchas(),
-        error: () => alert('Error al eliminar')
-      });
-    }
-  }
-
   resetFormulario() {
     this.nuevaCancha = { id: null, nombre: '', tipo_deporte: '', precio_por_hora: 0 };
     this.editando = false;
   }
 
-  // --- LÓGICA DE RESERVAS SINCRONIZADA ---
   prepararReserva(cancha: any) {
-    console.log('Preparando reserva para:', cancha.nombre);
     this.canchaSeleccionada = cancha;
     this.nuevaReservaForm = { fecha_inicio: '', fecha_fin: '' };
+    this.busquedaUsuario = '';
+    this.usuarioSeleccionado = null;
+    this.editandoReserva = false;
+  }
+
+  prepararEdicionReserva(reserva: any) {
+    this.editandoReserva = true;
+    this.reservaIdAEditar = reserva.id;
+    this.canchaSeleccionada = reserva.cancha;
+    this.nuevaReservaForm = {
+      fecha_inicio: reserva.fecha_inicio.substring(0, 16),
+      fecha_fin: reserva.fecha_fin.substring(0, 16)
+    };
   }
 
   confirmarReserva() {
-    if (!this.nuevaReservaForm.fecha_inicio || !this.nuevaReservaForm.fecha_fin) {
-      alert('Debe completar ambas fechas');
-      return;
-    }
+    const inicio = this.nuevaReservaForm.fecha_inicio.replace('T', ' ') + ':00';
+    const fin = this.nuevaReservaForm.fecha_fin.replace('T', ' ') + ':00';
 
-    const datos = {
+    const datos: any = {
       cancha_id: this.canchaSeleccionada.id,
-      user_id: this.usuarioLogueado.id,
-      fecha_inicio: this.nuevaReservaForm.fecha_inicio.replace('T', ' ') + ':00',
-      fecha_fin: this.nuevaReservaForm.fecha_fin.replace('T', ' ') + ':00'
+      fecha_inicio: inicio,
+      fecha_fin: fin
     };
 
-    this.http.post('http://localhost:8000/api/reservas', datos, { headers: this.getHeaders() }).subscribe({
-      next: () => {
-        alert('Reserva exitosa');
-        this.obtenerReservas();
-      },
-      error: (err) => alert('Error: ' + (err.error.message || 'Cancha ocupada'))
-    });
+    // Lógica de usuario para Admin vs Cliente
+    if (this.userRole === 'admin') {
+      datos.user_id = this.usuarioSeleccionado ? this.usuarioSeleccionado.id : null;
+      datos.nombre_manual = this.busquedaUsuario;
+    } else {
+      datos.user_id = this.usuarioLogueado.id;
+    }
+
+    if (this.editandoReserva && this.reservaIdAEditar) {
+      this.http.put(`http://localhost:8000/api/reservas/${this.reservaIdAEditar}`, datos, { headers: this.getHeaders() }).subscribe({
+        next: () => {
+          alert('Reserva actualizada');
+          this.obtenerReservas();
+          this.editandoReserva = false;
+        },
+        error: (err) => alert('Error: ' + (err.error.message || 'Error'))
+      });
+    } else {
+      this.http.post('http://localhost:8000/api/reservas', datos, { headers: this.getHeaders() }).subscribe({
+        next: () => {
+          alert('Reserva creada con éxito');
+          this.obtenerReservas();
+        },
+        error: (err) => alert('Error: ' + (err.error.message || 'Cancha ocupada'))
+      });
+    }
   }
 
   cancelarReserva(id: number) {
-    if (confirm('¿Eliminar reserva?')) {
+    if (confirm('¿Eliminar permanentemente?')) {
       this.http.delete(`http://localhost:8000/api/reservas/${id}`, { headers: this.getHeaders() }).subscribe({
         next: () => this.obtenerReservas(),
-        error: () => alert('Error al eliminar')
+        error: () => alert('Error')
+      });
+    }
+  }
+
+  cambiarEstadoReserva(id: number, nuevoEstado: string) {
+    if (confirm(`¿Marcar como ${nuevoEstado}?`)) {
+      this.http.put(`http://localhost:8000/api/reservas/${id}`, { estado: nuevoEstado }, { headers: this.getHeaders() }).subscribe({
+        next: () => {
+          alert(`Reserva ${nuevoEstado}`);
+          this.obtenerReservas();
+        },
+        error: () => alert('Error')
       });
     }
   }

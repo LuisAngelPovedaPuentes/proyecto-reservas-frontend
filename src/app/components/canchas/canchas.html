@@ -12,21 +12,19 @@
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label">Nombre de la Cancha</label>
-          <input type="text" class="form-control" placeholder="Ej: Cancha Sintética 1" [(ngModel)]="nuevaCancha.nombre">
+          <input type="text" class="form-control" [(ngModel)]="nuevaCancha.nombre">
         </div>
         <div class="col-md-3">
           <label class="form-label">Tipo de Deporte</label>
-          <input type="text" class="form-control" placeholder="Fútbol, Tenis..." [(ngModel)]="nuevaCancha.tipo_deporte">
+          <input type="text" class="form-control" [(ngModel)]="nuevaCancha.tipo_deporte">
         </div>
         <div class="col-md-3">
           <label class="form-label">Precio por Hora</label>
-          <input type="number" class="form-control" placeholder="0.00" [(ngModel)]="nuevaCancha.precio_por_hora">
+          <input type="number" class="form-control" [(ngModel)]="nuevaCancha.precio_por_hora">
         </div>
         <div class="col-md-2 d-flex align-items-end">
           <div class="w-100">
-            <button class="btn btn-dark w-100" (click)="guardarCancha()">
-              {{ editando ? 'Actualizar' : 'Guardar' }}
-            </button>
+            <button class="btn btn-dark w-100" (click)="guardarCancha()">{{ editando ? 'Actualizar' : 'Guardar' }}</button>
             <button *ngIf="editando" class="btn btn-link text-dark w-100 mt-1" (click)="resetFormulario()">Cancelar</button>
           </div>
         </div>
@@ -43,7 +41,7 @@
         <thead class="table-dark">
           <tr>
             <th>Nombre</th>
-            <th>Tipo de Deporte</th>
+            <th>Tipo</th>
             <th>Precio/Hora</th>
             <th>Acciones</th>
           </tr>
@@ -54,16 +52,11 @@
             <td>{{ cancha.tipo_deporte }}</td>
             <td>{{ cancha.precio_por_hora | currency }}</td>
             <td>
-              <button class="btn btn-sm btn-info text-white"
-                      data-bs-toggle="modal"
-                      data-bs-target="#modalReserva"
-                      (click)="prepararReserva(cancha)">
-                Reservar
-              </button>
+              <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalReserva" (click)="prepararReserva(cancha)">Reservar</button>
               <ng-container *ngIf="userRole === 'admin'">
-                <button class="btn btn-sm btn-warning me-1" (click)="editarCancha(cancha)">Editar</button>
-                <button class="btn btn-sm btn-danger" (click)="borrarCancha(cancha.id)">Eliminar</button>
-              </ng-container>
+              <button class="btn btn-sm btn-warning mx-1" (click)="editarCancha(cancha)">Editar</button>
+              <button class="btn btn-sm btn-danger" (click)="eliminarCancha(cancha.id)">Eliminar</button>
+            </ng-container>
             </td>
           </tr>
         </tbody>
@@ -73,39 +66,38 @@
 
   <div class="card shadow">
     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-      <h4 class="mb-0">{{ userRole === 'admin' ? 'Control Global de Reservas' : 'Historial de Reservas' }}</h4>
+      <h4 class="mb-0">{{ userRole === 'admin' ? 'Control Global' : 'Mis Reservas' }}</h4>
     </div>
     <div class="card-body">
-      <div *ngIf="userRole === 'admin'" class="row mb-3">
-        <div class="col-md-6">
-          <input type="text" class="form-control" placeholder="🔍 Buscar por cliente..." [(ngModel)]="filtroNombre">
-        </div>
+      <div *ngIf="userRole === 'admin'" class="mb-3 col-md-4">
+        <input type="text" class="form-control" placeholder="🔍 Filtrar por cliente..." [(ngModel)]="filtroNombre">
       </div>
-
       <div class="table-responsive">
         <table class="table table-bordered table-striped">
           <thead class="table-light">
             <tr>
               <th *ngIf="userRole === 'admin'">Cliente</th>
               <th>Cancha</th>
-              <th>Inicio</th>
-              <th>Fin</th>
+              <th>Horario/Inicio</th>
+              <th>Horario/Final</th>
               <th>Total</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let reserva of reservasFiltradas()">
+            <tr *ngFor="let reserva of reservasFiltradas()" [ngClass]="{'table-light text-muted opacity-75': reserva.estado === 'Cancelada'}">
               <td *ngIf="userRole === 'admin'"><strong>{{ reserva.nombre_cliente }}</strong></td>
               <td>{{ reserva.cancha?.nombre || 'Cancha #' + reserva.cancha_id }}</td>
               <td>{{ reserva.fecha_inicio | date:'short' }}</td>
               <td>{{ reserva.fecha_fin | date:'short' }}</td>
               <td><span class="text-success fw-bold">{{ reserva.total_pago | currency }}</span></td>
               <td>
-                <button class="btn btn-sm btn-outline-primary me-1">Modificar</button>
-                <button *ngIf="userRole === 'admin'" class="btn btn-sm btn-outline-danger" (click)="cancelarReserva(reserva.id)">
-                  Eliminar
-                </button>
+                <ng-container *ngIf="reserva.estado !== 'Cancelada'">
+                  <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalReserva" (click)="prepararEdicionReserva(reserva)">Modificar</button>
+                  <button class="btn btn-sm btn-outline-warning me-1" (click)="cambiarEstadoReserva(reserva.id, 'Cancelada')">Cancelar</button>
+                </ng-container>
+                <span *ngIf="reserva.estado === 'Cancelada'" class="badge bg-secondary me-1">Cancelada</span>
+                <button *ngIf="userRole === 'admin'" class="btn btn-sm btn-outline-danger" (click)="cancelarReserva(reserva.id)">Eliminar</button>
               </td>
             </tr>
           </tbody>
@@ -114,14 +106,33 @@
     </div>
   </div>
 
-  <div class="modal fade" id="modalReserva" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalReserva" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content text-dark">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title">Nueva Reserva: {{ canchaSeleccionada?.nombre }}</h5>
+          <h5 class="modal-title">{{ editandoReserva ? 'Editar' : 'Nueva' }} Reserva: {{ canchaSeleccionada?.nombre }}</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+
+          <div *ngIf="userRole === 'admin' && !editandoReserva" class="mb-4 p-3 border rounded bg-light shadow-sm">
+            <label class="form-label fw-bold text-primary">👤 Asignar Cliente (Nombre o Usuario)</label>
+            <input type="text" class="form-control" placeholder="Escriba nombre para registro manual o busque..."
+                   [(ngModel)]="busquedaUsuario" (input)="filtrarUsuarios()">
+
+            <ul class="list-group mt-1 shadow-sm" *ngIf="usuariosFiltrados.length > 0">
+              <li class="list-group-item list-group-item-action py-2" *ngFor="let u of usuariosFiltrados" (click)="seleccionarUsuario(u)" style="cursor: pointer;">
+                <i class="bi bi-person-check-fill text-success mr-2"></i> {{ u.name }} <small class="text-muted">({{u.email}})</small>
+              </li>
+            </ul>
+            <div *ngIf="usuarioSeleccionado" class="mt-2 text-success small">
+              <i class="bi bi-check-circle-fill"></i> Vinculado al usuario: <strong>{{ usuarioSeleccionado.name }}</strong>
+            </div>
+            <div *ngIf="!usuarioSeleccionado && busquedaUsuario" class="mt-2 text-warning small">
+              <i class="bi bi-pencil-square"></i> Se guardará como <strong>Registro Manual</strong>.
+            </div>
+          </div>
+
           <div class="mb-3">
             <label class="form-label fw-bold">Fecha y Hora de Inicio</label>
             <input type="datetime-local" class="form-control" [(ngModel)]="nuevaReservaForm.fecha_inicio">
@@ -132,10 +143,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-success" (click)="confirmarReserva()" data-bs-dismiss="modal">
-            Confirmar Reserva
-          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-success" (click)="confirmarReserva()" data-bs-dismiss="modal">Confirmar</button>
         </div>
       </div>
     </div>
